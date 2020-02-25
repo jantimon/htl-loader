@@ -1,1 +1,0 @@
-<sly data-sly-use.headingTemplate="heading.html" data-sly-call="${headingTemplate.heading @ title = properties.title}"/>

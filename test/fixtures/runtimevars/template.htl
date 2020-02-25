@@ -1,2 +1,0 @@
-<h1>${htl.title}</h1>
-<div data-sly-test="${wcmmode.edit}">click here to edit</div>

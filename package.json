@@ -4,7 +4,7 @@
   "description": "Webpack loader for HTL/Sightly templates",
   "main": "index.js",
   "scripts": {
-    "test": "mocha test/*.test.js",
+    "test": "mocha --no-timeout test/*.test.js",
     "example": "webpack --config example/webpack.config.js",
     "format": "prettier --write \"**/*.js\""
   },
@@ -19,6 +19,7 @@
     "@adobe/htlengine": "^4.0.0",
     "fs-extra": "^8.1.0",
     "husky": "^4.2.3",
+    "memfs": "3.1.1",
     "mocha": "^7.0.1",
     "prettier": "^1.19.1",
     "pretty-quick": "^2.0.1",
@@ -29,7 +30,8 @@
     "@adobe/htlengine": "^4.0.0"
   },
   "dependencies": {
-    "loader-utils": "^1.2.3"
+    "loader-utils": "^1.2.3",
+    "posthtml": "0.12.0"
   },
   "husky": {
     "hooks": {
