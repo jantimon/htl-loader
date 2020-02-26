@@ -1,9 +1,9 @@
 const path = require("path");
 const webpack = require("webpack");
-const memfs = require('memfs');
+const memfs = require("memfs");
 
 async function compile(fixtureFolderName, options = {}) {
-  const distFolder = path.resolve(__dirname, '/dist');
+  const distFolder = path.resolve(__dirname, "/dist");
   const compiler = webpack({
     context: path.resolve(__dirname, "fixtures", fixtureFolderName),
     entry: `./entry.js`,
@@ -27,7 +27,7 @@ async function compile(fixtureFolderName, options = {}) {
   });
 
   /**
-   * https://github.com/webpack/webpack-dev-middleware/blob/2daa4ddac3cd977f84ce4d25507f0d658447e359/src/utils/setupOutputFileSystem.js#L28 
+   * https://github.com/webpack/webpack-dev-middleware/blob/2daa4ddac3cd977f84ce4d25507f0d658447e359/src/utils/setupOutputFileSystem.js#L28
    */
   outputFileSystem = memfs.createFsFromVolume(new memfs.Volume());
   outputFileSystem.join = path.join.bind(path);
@@ -37,7 +37,10 @@ async function compile(fixtureFolderName, options = {}) {
     compiler.run((err, stats) => {
       if (err) reject(err);
       if (stats.hasErrors()) reject(new Error(stats.toJson().errors));
-      const compiledJs = outputFileSystem.readFileSync(path.join(distFolder, 'bundle.js'), 'utf-8');
+      const compiledJs = outputFileSystem.readFileSync(
+        path.join(distFolder, "bundle.js"),
+        "utf-8"
+      );
       const executedBundle = eval(compiledJs).default;
       resolve([executedBundle, stats]);
     });

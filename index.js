@@ -2,6 +2,8 @@ const fs = require("fs");
 const path = require("path");
 const { getOptions, parseQuery } = require("loader-utils");
 const { Compiler } = require("@adobe/htlengine");
+const preProcessHTML = require("./lib/preProcessHTML");
+const postProcessJs = require("./lib/postProcessJs");
 
 module.exports = async function(source) {
   const options = getOptions(this);
@@ -16,23 +18,37 @@ module.exports = async function(source) {
       includeRuntime: true,
       runtimeVars: [],
       moduleImportGenerator: null,
-      data: {}
+      data: {},
+      resourceRoot: this.rootContext
     },
     options,
     query
   );
 
-  let input = source;
+  // Get the webpack loader query prefix for this current loader
+  const htlLoader = "!!" + this.request.replace(/![^!]+$/, "") + "!";
+  /** Convert htl includes into webpack includes */
+  const resolver = (resourcePath, type) => {
+    if (type === "data-sly-resource") {
+      const fileName = path.basename(resourcePath);
+      return (
+        htlLoader +
+        [settings.resourceRoot, resourcePath, fileName + ".html"].join("/")
+      );
+    }
+  };
+  let input = await preProcessHTML(source, resolver);
 
   // Optionally transform source, e.g. remove directives `@adobe/htlengine` does not understand
   if (settings.transformSource) {
-    input = settings.transformSource(source, settings);
+    input = settings.transformSource(input, settings);
   }
 
   // Set up compiler
   const compiler = new Compiler()
     .withDirectory(this.rootContext)
     .includeRuntime(settings.includeRuntime)
+    .withRuntimeHTLEngine(require.resolve("./lib/htl-runtime"))
     .withRuntimeGlobalName(settings.globalName);
 
   settings.runtimeVars.forEach(name => {
@@ -44,6 +60,8 @@ module.exports = async function(source) {
 
   // Compile
   let compiledCode = await compiler.compileToString(input, this.context);
+
+  compiledCode = postProcessJs(compiledCode);
 
   // Specify location for data files from `use` directives
   if (settings.useDir) {
@@ -64,13 +82,8 @@ module.exports = async function(source) {
     compiledCode = settings.transformCompiled(compiledCode, settings);
   }
 
-  if (settings.includeRuntime) {
-    // Run
-    const template = eval(compiledCode);
-    const html = await template(settings.data);
-
-    return `module.exports = \`${html}\``;
-  } else {
-    return compiledCode;
-  }
+  // Provide a default function to excute the template
+  return `module.exports = function(args) { return module.exports.main(args || ${JSON.stringify(
+    settings.data
+  )}); } ${compiledCode}`;
 };
